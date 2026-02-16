@@ -5,8 +5,10 @@
 import { SAM2 } from './sam2'
 import * as ort from 'onnxruntime-web'
 
-const base = typeof self !== 'undefined' && self.location ? self.location.origin : ''
-ort.env.wasm.wasmPaths = `${base}/wasm/`
+// Use BASE_URL so GitHub Pages subpath works (e.g. /onnx-test/)
+const basePath = typeof import.meta.env?.BASE_URL === 'string' ? import.meta.env.BASE_URL : '/'
+const origin = typeof self !== 'undefined' && self.location ? self.location.origin : ''
+ort.env.wasm.wasmPaths = `${origin}${basePath}wasm/`
 
 const sam = new SAM2()
 

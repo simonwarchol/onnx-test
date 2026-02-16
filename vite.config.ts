@@ -30,7 +30,9 @@ export default defineConfig({
       load(id) {
         if (id !== '\0virtual:asset-list') return null
         const list = getAssetImageList()
-        return `export default ${JSON.stringify(list)}`
+        const base = (process.env.VITE_BASE_PATH || '').replace(/\/$/, '')
+        const withBase = base ? list.map((p) => base + p) : list
+        return `export default ${JSON.stringify(withBase)}`
       },
     },
     {

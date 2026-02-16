@@ -14,7 +14,8 @@ import assetList from 'virtual:asset-list'
 
 const IMAGE_SIZE: Size = { w: 1024, h: 1024 }
 const MASK_SIZE: Size = { w: 256, h: 256 }
-const IMAGE_URLS = assetList.length > 0 ? assetList : ['/assets/LSP33352.png']
+const BASE = typeof import.meta.env?.BASE_URL === 'string' ? import.meta.env.BASE_URL : '/'
+const IMAGE_URLS = assetList.length > 0 ? assetList : [`${BASE}assets/LSP33352.png`]
 
 type WorkerMessage =
   | { type: 'pong'; data: { success: boolean; device: string | null } }

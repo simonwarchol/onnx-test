@@ -20,7 +20,7 @@ This project is set up to build and deploy to GitHub Pages via GitHub Actions.
 4. **See your site**  
    After the workflow finishes (a minute or two), your site will be at:  
    **`https://<your-username>.github.io/<repo-name>/`**  
-   (e.g. `https://octocat.github.io/onnx-test/`).
+   or your custom domain (e.g. **https://simonwarchol.com/onnx-test/**).
 
 ## Local build that matches GitHub Pages
 
