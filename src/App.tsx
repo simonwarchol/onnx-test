@@ -280,7 +280,7 @@ export default function App() {
           Crop
         </button>
         <button type="button" onClick={reset} disabled={loading}>
-          Reset points
+          Clear
         </button>
       </div>
       <canvas
