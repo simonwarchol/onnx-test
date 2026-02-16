@@ -26,10 +26,9 @@ This project is set up to build and deploy to GitHub Pages via GitHub Actions.
 If your main site is at **simonwarchol.com** (from a user/org Pages repo) and you want this app at **simonwarchol.com/onnx-test/**:
 
 1. In **this** repo (onnx-test): go to **Settings** → **Secrets and variables** → **Actions**.
-2. Add two repository secrets:
-   - **`DEPLOY_TARGET_REPO`** – the repo that serves simonwarchol.com (e.g. `simonwarchol/simonwarchol.github.io`).
-   - **`GH_PAT`** – a [Personal Access Token](https://github.com/settings/tokens) with `repo` scope so the workflow can push to that repo.
-3. Push a commit or re-run the workflow. A second job will copy the built app into the `onnx-test/` folder of the target repo and push. The next time that repo’s site builds, **https://simonwarchol.com/onnx-test/** will serve this app.
+2. Add a **variable**: **`DEPLOY_TARGET_REPO`** = the repo that serves simonwarchol.com (e.g. `simonwarchol/simonwarchol.github.io`).
+3. Add a **secret**: **`GH_PAT`** = a [Personal Access Token](https://github.com/settings/tokens) with `repo` scope so the workflow can push to that repo.
+4. Push a commit or re-run the workflow. The deploy-to-user-site job will copy the built app into the `onnx-test/` folder of the target repo and push. The next time that repo’s site builds, **https://simonwarchol.com/onnx-test/** will serve this app.
 
 ## Local build that matches GitHub Pages
 
