@@ -61,30 +61,34 @@ jobs:
         uses: actions/deploy-pages@v4
 
   # Deploy built app into your user site repo so it works at simonwarchol.com/onnx-test/
+  # Set DEPLOY_TARGET_REPO and GH_PAT secrets to enable; otherwise this job no-ops.
   deploy-to-user-site:
     runs-on: ubuntu-latest
     needs: build
-    if: ${{ secrets.DEPLOY_TARGET_REPO != '' }}
     permissions:
       contents: write
     steps:
       - name: Download build artifact
+        if: ${{ secrets.DEPLOY_TARGET_REPO != '' }}
         uses: actions/download-artifact@v4
         with:
           name: github-pages
           path: ./dist
       - name: Checkout user site repo
+        if: ${{ secrets.DEPLOY_TARGET_REPO != '' }}
         uses: actions/checkout@v4
         with:
           repository: ${{ secrets.DEPLOY_TARGET_REPO }}
           token: ${{ secrets.GH_PAT }}
           path: user-site
       - name: Copy app into onnx-test folder
+        if: ${{ secrets.DEPLOY_TARGET_REPO != '' }}
         run: |
           rm -rf user-site/onnx-test
           mkdir -p user-site/onnx-test
           cp -r dist/. user-site/onnx-test/
       - name: Commit and push
+        if: ${{ secrets.DEPLOY_TARGET_REPO != '' }}
         working-directory: user-site
         run: |
           git config user.name "github-actions[bot]"
