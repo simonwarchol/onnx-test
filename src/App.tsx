@@ -10,10 +10,11 @@ import {
   type Size,
 } from './imageUtils'
 import { loadImageAsCanvas } from './tiffLoader'
+import assetList from 'virtual:asset-list'
 
 const IMAGE_SIZE: Size = { w: 1024, h: 1024 }
 const MASK_SIZE: Size = { w: 256, h: 256 }
-const DEFAULT_IMAGE_URLS = ['/assets/test.tif', '/assets/LSP33352.png']
+const IMAGE_URLS = assetList.length > 0 ? assetList : ['/assets/LSP33352.png']
 
 type WorkerMessage =
   | { type: 'pong'; data: { success: boolean; device: string | null } }
@@ -28,6 +29,7 @@ export default function App() {
   const [imageEncoded, setImageEncoded] = useState(false)
   const [status, setStatus] = useState('Loading…')
   const [image, setImage] = useState<HTMLCanvasElement | null>(null)
+  const [imageIndex, setImageIndex] = useState(0)
   const [mask, setMask] = useState<HTMLCanvasElement | null>(null)
   const [prevMaskArray, setPrevMaskArray] = useState<Float32Array | null>(null)
   const [imageError, setImageError] = useState<string | null>(null)
@@ -94,31 +96,45 @@ export default function App() {
 
   useEffect(() => {
     setImageError(null)
-    const tryLoad = (urls: string[], index: number): void => {
-      if (index >= urls.length) {
-        setImageError(`Could not load any default image. Tried: ${urls.join(', ')}. Add test.tif or LSP33352.png to public/assets/`)
-        setImage(null)
-        return
-      }
-      const url = urls[index]
-      loadImageAsCanvas(url)
-        .then((imgCanvas) => {
-          grayscaleToRgbCanvas(imgCanvas)
-          const w = imgCanvas.width
-          const h = imgCanvas.height
-          const largest = Math.max(w, h)
-          const box = resizeAndPadBox({ w, h }, { w: largest, h: largest })
-          const padded = document.createElement('canvas')
-          padded.width = largest
-          padded.height = largest
-          const ctx = padded.getContext('2d')!
-          ctx.drawImage(imgCanvas, 0, 0, w, h, box.x, box.y, box.w, box.h)
-          setImage(padded)
-        })
-        .catch(() => tryLoad(urls, index + 1))
+    const index = IMAGE_URLS.length ? Math.min(imageIndex, IMAGE_URLS.length - 1) : 0
+    const url = IMAGE_URLS[index]
+    if (!url) {
+      setImage(null)
+      return
     }
-    tryLoad(DEFAULT_IMAGE_URLS, 0)
-  }, [])
+    loadImageAsCanvas(url)
+      .then((imgCanvas) => {
+        setImageError(null)
+        grayscaleToRgbCanvas(imgCanvas)
+        const w = imgCanvas.width
+        const h = imgCanvas.height
+        const largest = Math.max(w, h)
+        const box = resizeAndPadBox({ w, h }, { w: largest, h: largest })
+        const padded = document.createElement('canvas')
+        padded.width = largest
+        padded.height = largest
+        const ctx = padded.getContext('2d')!
+        ctx.drawImage(imgCanvas, 0, 0, w, h, box.x, box.y, box.w, box.h)
+        setImage(padded)
+      })
+      .catch(() => {
+        setImageError(`Could not load ${url}. Add images (.tif, .png, .jpg, etc.) to public/assets/`)
+        setImage(null)
+      })
+  }, [imageIndex])
+
+  const switchImage = (direction: 'prev' | 'next') => {
+    const next =
+      direction === 'next'
+        ? (imageIndex + 1) % IMAGE_URLS.length
+        : (imageIndex - 1 + IMAGE_URLS.length) % IMAGE_URLS.length
+    setImageIndex(next)
+    pointsRef.current = []
+    setMask(null)
+    setPrevMaskArray(null)
+    setImageEncoded(false)
+    setStatus(device ? 'Encode image' : status)
+  }
 
   useEffect(() => {
     if (!image || !canvasRef.current) return
@@ -190,16 +206,28 @@ export default function App() {
     pointsRef.current = []
     setMask(null)
     setPrevMaskArray(null)
-    setImageEncoded(false)
-    setStatus(device ? 'Encode image' : status)
+    setStatus('Ready. Click on image to segment')
   }
 
-  if (imageError) {
+  if (imageError && !image) {
     return (
-      <div style={{ padding: 24, fontFamily: 'sans-serif' }}>
+      <div style={{ padding: 24, fontFamily: 'sans-serif', maxWidth: 900 }}>
         <h1>SAM 2 segmentation</h1>
         <p style={{ color: 'crimson' }}>{imageError}</p>
-        <p>Place <code>test.tif</code> or <code>LSP33352.png</code> in <code>public/assets/</code>.</p>
+        {IMAGE_URLS.length > 1 && (
+          <div style={{ marginTop: 16, display: 'flex', gap: 8, alignItems: 'center' }}>
+            <button type="button" onClick={() => switchImage('prev')}>
+              ← Prev image
+            </button>
+            <span style={{ color: '#666' }}>
+              Image {imageIndex + 1} / {IMAGE_URLS.length}
+            </span>
+            <button type="button" onClick={() => switchImage('next')}>
+              Next image →
+            </button>
+          </div>
+        )}
+        <p style={{ marginTop: 16 }}>Add images (.tif, .png, .jpg, etc.) to <code>public/assets/</code>.</p>
       </div>
     )
   }
@@ -212,7 +240,31 @@ export default function App() {
         {loading && <span style={{ marginRight: 8 }}>⏳</span>}
         {status}
       </p>
-      <div style={{ marginBottom: 16, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+      <div style={{ marginBottom: 16, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+        {IMAGE_URLS.length > 1 && (
+          <>
+            <button
+              type="button"
+              onClick={() => switchImage('prev')}
+              disabled={loading}
+              title="Previous image"
+            >
+              ← Prev
+            </button>
+            <span style={{ color: '#666', fontSize: 14 }}>
+              Image {imageIndex + 1} / {IMAGE_URLS.length}
+            </span>
+            <button
+              type="button"
+              onClick={() => switchImage('next')}
+              disabled={loading}
+              title="Next image"
+            >
+              Next →
+            </button>
+            <span style={{ width: 8 }} />
+          </>
+        )}
         <button
           type="button"
           onClick={encodeImage}

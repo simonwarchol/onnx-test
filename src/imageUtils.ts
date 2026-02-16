@@ -100,11 +100,25 @@ export function maskImageCanvas(
   return canvas
 }
 
-/** Optional: convert grayscale canvas to RGB (duplicate channel) for SAM. */
+/** If canvas is grayscale (R≈G≈B or single-channel), duplicate to RGB for SAM; otherwise leave color as-is. */
 export function grayscaleToRgbCanvas(canvas: HTMLCanvasElement): HTMLCanvasElement {
   const ctx = canvas.getContext('2d')!
   const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height)
   const d = imgData.data
+  const tolerance = 2
+  let grayCount = 0
+  const step = Math.max(1, Math.floor((d.length / 4) / 1000))
+  for (let i = 0; i < d.length; i += 4 * step) {
+    const r = d[i]
+    const g = d[i + 1]
+    const b = d[i + 2]
+    const sameChannels = Math.abs(r - g) <= tolerance && Math.abs(g - b) <= tolerance
+    const singleChannel = Math.abs(g) <= tolerance && Math.abs(b) <= tolerance
+    if (sameChannels || singleChannel) grayCount++
+  }
+  const samples = Math.ceil((d.length / 4) / step)
+  const isGrayscale = grayCount >= 0.95 * samples
+  if (!isGrayscale) return canvas
   for (let i = 0; i < d.length; i += 4) {
     const g = d[i]
     d[i] = g
